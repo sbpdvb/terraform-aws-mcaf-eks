@@ -1,14 +1,13 @@
 resource "aws_cloudwatch_log_group" "default" {
   name              = "/aws/eks/${var.name}/cluster"
-  retention_in_days = 7
+  retention_in_days = var.log_retention
 }
 
 resource "aws_eks_cluster" "default" {
-  name                      = "default"
+  name                      = var.name
   enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
   role_arn                  = aws_iam_role.default.arn
   tags                      = var.tags
-
 
   vpc_config {
     subnet_ids = var.subnet_ids
@@ -16,7 +15,7 @@ resource "aws_eks_cluster" "default" {
 
   depends_on = [
     aws_cloudwatch_log_group.default,
-    aws_iam_role_policy_attachment.default-AmazonEKSClusterPolicy,
+    aws_iam_role_policy_attachment.default_AmazonEKSClusterPolicy,
   ]
 }
 
@@ -34,9 +33,9 @@ resource "aws_eks_node_group" "default" {
   }
 
   depends_on = [
-    aws_iam_role_policy_attachment.poc-cluster-node-group-AmazonEC2ContainerRegistryReadOnly,
-    aws_iam_role_policy_attachment.poc-cluster-node-group-AmazonEKS_CNI_Policy,
-    aws_iam_role_policy_attachment.poc-cluster-node-group-AmazonEKSWorkerNodePolicy,
+    aws_iam_role_policy_attachment.default_node_group_AmazonEC2ContainerRegistryReadOnly,
+    aws_iam_role_policy_attachment.default_node_group_AmazonEKS_CNI_Policy,
+    aws_iam_role_policy_attachment.default_node_group_AmazonEKSWorkerNodePolicy,
   ]
 }
 
@@ -74,22 +73,22 @@ resource "aws_iam_role" "default_node_group" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "default-AmazonEKSClusterPolicy" {
+resource "aws_iam_role_policy_attachment" "default_AmazonEKSClusterPolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
   role       = aws_iam_role.default.name
 }
 
-resource "aws_iam_role_policy_attachment" "poc-cluster-node-group-AmazonEKSWorkerNodePolicy" {
+resource "aws_iam_role_policy_attachment" "default_node_group_AmazonEKSWorkerNodePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
   role       = aws_iam_role.default_node_group.name
 }
 
-resource "aws_iam_role_policy_attachment" "poc-cluster-node-group-AmazonEKS_CNI_Policy" {
+resource "aws_iam_role_policy_attachment" "default_node_group_AmazonEKS_CNI_Policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
   role       = aws_iam_role.default_node_group.name
 }
 
-resource "aws_iam_role_policy_attachment" "poc-cluster-node-group-AmazonEC2ContainerRegistryReadOnly" {
+resource "aws_iam_role_policy_attachment" "default_node_group_AmazonEC2ContainerRegistryReadOnly" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
   role       = aws_iam_role.default_node_group.name
 }
