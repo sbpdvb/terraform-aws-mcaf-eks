@@ -1,3 +1,9 @@
+variable "log_retention" {
+  type        = number
+  default     = 7
+  description = "Retention of CloudWatch logs for the EKS cluster"
+}
+
 variable "name" {
   type        = string
   description = "Name of the cluster"
