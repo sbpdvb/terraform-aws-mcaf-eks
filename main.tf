@@ -21,7 +21,7 @@ resource "aws_eks_cluster" "default" {
 
 resource "aws_eks_node_group" "default" {
   cluster_name    = aws_eks_cluster.default.name
-  instance_types  = ["t3.small"]
+  instance_types  = var.instance_types
   node_group_name = "default_node"
   node_role_arn   = aws_iam_role.default_node_group.arn
   subnet_ids      = var.subnet_ids
@@ -40,7 +40,7 @@ resource "aws_eks_node_group" "default" {
 }
 
 resource "aws_iam_role" "default" {
-  name = "RoleEksCluster"
+  name = "RoleEksCluster-${var.name}"
   tags = var.tags
 
   assume_role_policy = jsonencode(
@@ -58,7 +58,7 @@ resource "aws_iam_role" "default" {
 }
 
 resource "aws_iam_role" "default_node_group" {
-  name = "RoleEksClusterNodeGroup"
+  name = "RoleEksClusterNodeGroup-${var.name}"
   tags = var.tags
 
   assume_role_policy = jsonencode({
