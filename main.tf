@@ -40,7 +40,7 @@ resource "aws_eks_node_group" "default" {
 }
 
 resource "aws_iam_role" "default" {
-  name = "RoleEksCluster"
+  name = "RoleEksCluster-${var.name}"
   tags = var.tags
 
   assume_role_policy = jsonencode(
@@ -58,7 +58,7 @@ resource "aws_iam_role" "default" {
 }
 
 resource "aws_iam_role" "default_node_group" {
-  name = "RoleEksClusterNodeGroup"
+  name = "RoleEksClusterNodeGroup-${var.name}"
   tags = var.tags
 
   assume_role_policy = jsonencode({
