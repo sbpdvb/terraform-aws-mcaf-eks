@@ -1,3 +1,9 @@
+variable "create_node_group" {
+  type        = bool
+  default     = true
+  description = "Whether or not to create a node group"
+}
+
 variable "log_retention" {
   type        = number
   default     = 7
