@@ -20,6 +20,7 @@ resource "aws_eks_cluster" "default" {
 }
 
 resource "aws_eks_node_group" "default" {
+  count           = var.create_node_group == false ? 0 : 1
   cluster_name    = aws_eks_cluster.default.name
   instance_types  = var.instance_types
   node_group_name = "default_node"
