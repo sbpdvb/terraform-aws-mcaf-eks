@@ -21,6 +21,20 @@ variable "name" {
   description = "Name of the cluster"
 }
 
+variable "scaling_config" {
+  type = object({
+    desired_size = number
+    max_size     = number
+    min_size     = number
+  })
+  default = {
+    desired_size = 3
+    max_size     = 3
+    min_size     = 3
+  }
+  description = "The config that is used for the node group scaling"
+}
+
 variable "subnet_ids" {
   type        = list(string)
   default     = null
