@@ -9,8 +9,15 @@ resource "aws_eks_cluster" "default" {
   role_arn                  = aws_iam_role.default.arn
   tags                      = var.tags
 
+
+
+
   vpc_config {
     subnet_ids = var.subnet_ids
+    endpoint_private_access  = var.endpoint_private_access
+    endpoint_public_access =var.endpoint_public_access
+    public_access_cidrs = var.public_access_cidrs 
+
   }
 
   depends_on = [
@@ -18,6 +25,8 @@ resource "aws_eks_cluster" "default" {
     aws_iam_role_policy_attachment.default_AmazonEKSClusterPolicy,
   ]
 }
+
+
 
 resource "aws_eks_node_group" "default" {
   count           = var.create_node_group == false ? 0 : 1
@@ -56,6 +65,8 @@ resource "aws_iam_role" "default" {
       }]
     }
   )
+
+  permissions_boundary = var.permissions_boundary
 }
 
 resource "aws_iam_role" "default_node_group" {
@@ -72,6 +83,8 @@ resource "aws_iam_role" "default_node_group" {
     }]
     Version = "2012-10-17"
   })
+
+  permissions_boundary = var.permissions_boundary
 }
 
 resource "aws_iam_role_policy_attachment" "default_AmazonEKSClusterPolicy" {

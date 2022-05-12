@@ -45,3 +45,27 @@ variable "tags" {
   type        = map(string)
   description = "A mapping of tags to assign to the cluster"
 }
+
+variable "permissions_boundary" {
+  type = string
+  description = "Optional Boundary Permission for the IAM Role"
+  default = null
+}
+
+variable "endpoint_private_access" {
+  type = bool 
+  default = true
+  description = "Enable Private Endpoint Access "
+}
+
+variable "endpoint_public_access" {
+  type = bool 
+  default = true
+  description = "Enable Public Endpoint Access "
+}
+
+variable "public_access_cidrs" {
+  type = list(string) 
+  default = null
+  description = "EnableEndpoint Access security groups"
+}
