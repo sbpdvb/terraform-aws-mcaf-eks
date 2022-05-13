@@ -9,14 +9,11 @@ resource "aws_eks_cluster" "default" {
   role_arn                  = aws_iam_role.default.arn
   tags                      = var.tags
 
-
-
-
   vpc_config {
-    subnet_ids = var.subnet_ids
-    endpoint_private_access  = var.endpoint_private_access
-    endpoint_public_access =var.endpoint_public_access
-    public_access_cidrs = var.public_access_cidrs 
+    subnet_ids              = var.subnet_ids
+    endpoint_private_access = var.endpoint_private_access
+    endpoint_public_access  = var.endpoint_public_access
+    public_access_cidrs     = var.public_access_cidrs
 
   }
 
@@ -25,8 +22,6 @@ resource "aws_eks_cluster" "default" {
     aws_iam_role_policy_attachment.default_AmazonEKSClusterPolicy,
   ]
 }
-
-
 
 resource "aws_eks_node_group" "default" {
   count           = var.create_node_group == false ? 0 : 1
@@ -47,6 +42,8 @@ resource "aws_eks_node_group" "default" {
     aws_iam_role_policy_attachment.default_node_group_AmazonEKS_CNI_Policy,
     aws_iam_role_policy_attachment.default_node_group_AmazonEKSWorkerNodePolicy,
   ]
+
+  tags = var.tags
 }
 
 resource "aws_iam_role" "default" {
@@ -106,3 +103,13 @@ resource "aws_iam_role_policy_attachment" "default_node_group_AmazonEC2Container
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
   role       = aws_iam_role.default_node_group.name
 }
+
+resource "aws_eks_addon" "addon" {
+  for_each      = var.addons
+  cluster_name  = aws_eks_cluster.default.name
+  addon_name    = each.key
+  addon_version = each.value
+}
+
+
+

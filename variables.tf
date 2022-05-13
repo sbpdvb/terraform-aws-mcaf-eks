@@ -47,25 +47,36 @@ variable "tags" {
 }
 
 variable "permissions_boundary" {
-  type = string
+  type        = string
   description = "Optional Boundary Permission for the IAM Role"
-  default = null
+  default     = null
 }
 
 variable "endpoint_private_access" {
-  type = bool 
-  default = true
+  type        = bool
+  default     = true
   description = "Enable Private Endpoint Access "
 }
 
 variable "endpoint_public_access" {
-  type = bool 
-  default = true
+  type        = bool
+  default     = true
   description = "Enable Public Endpoint Access "
 }
 
 variable "public_access_cidrs" {
-  type = list(string) 
-  default = null
+  type        = list(string)
+  default     = null
   description = "EnableEndpoint Access security groups"
+}
+
+variable "addons" {
+  description = "EKS Addons"
+  default = {
+    #   "adot" : null,
+    "kube-proxy" : null,
+    "vpc-cni" : null,
+    "coredns" : null,
+    "aws-ebs-csi-driver" : null,
+  }
 }
