@@ -73,10 +73,31 @@ variable "public_access_cidrs" {
 variable "addons" {
   description = "EKS Addons"
   default = {
-    #   "adot" : null,
+    #   "adot" : null,  # broken on private clusters
     "kube-proxy" : null,
     "vpc-cni" : null,
     "coredns" : null,
     "aws-ebs-csi-driver" : null,
   }
+}
+
+variable "disk_size" {
+  description = "Root volume disksize"
+  default     = 20
+}
+
+variable "kms_key_arn" {
+  description = "KMS Key arn for the EKS Encryption"
+}
+
+variable "user_data" {
+  description = "Custom user-data for node instances"
+  default     = null
+  type        = string
+}
+
+variable "enable_launch_template" {
+  description = "Enable custom launch template for ec2 nodes"
+  default     = false
+  type        = bool
 }

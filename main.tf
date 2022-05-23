@@ -17,10 +17,38 @@ resource "aws_eks_cluster" "default" {
 
   }
 
+  encryption_config {
+    provider {
+      key_arn =var.kms_key_arn
+    }
+    resources = ["secrets"]
+  }
+
   depends_on = [
     aws_cloudwatch_log_group.default,
     aws_iam_role_policy_attachment.default_AmazonEKSClusterPolicy,
   ]
+}
+
+resource "aws_launch_template" "default" {
+  name = "${var.name}-default-launch-template"
+  monitoring {
+    enabled = true
+  }
+
+  block_device_mappings {
+    device_name = "/dev/xvda"
+
+    ebs {
+      volume_size = var.disk_size
+      encrypted   = true
+      volume_type = "gp3"
+      kms_key_id  = var.kms_key_arn
+
+    }
+  }
+
+  user_data = var.user_data
 }
 
 resource "aws_eks_node_group" "default" {
@@ -31,17 +59,34 @@ resource "aws_eks_node_group" "default" {
   node_role_arn   = aws_iam_role.default_node_group.arn
   subnet_ids      = var.subnet_ids
 
+
   scaling_config {
     desired_size = var.scaling_config.desired_size
     max_size     = var.scaling_config.max_size
     min_size     = var.scaling_config.min_size
   }
 
+  disk_size = var.disk_size
+
+
+  dynamic "launch_template" {
+    for_each = var.enable_launch_template ? [1] : []
+    content {
+      id      = aws_launch_template.default.id
+      version = aws_launch_template.default.latest_version
+    }
+  }
+
+
   depends_on = [
     aws_iam_role_policy_attachment.default_node_group_AmazonEC2ContainerRegistryReadOnly,
     aws_iam_role_policy_attachment.default_node_group_AmazonEKS_CNI_Policy,
     aws_iam_role_policy_attachment.default_node_group_AmazonEKSWorkerNodePolicy,
   ]
+
+  lifecycle {
+    ignore_changes = [scaling_config[0].desired_size]
+  }
 
   tags = var.tags
 }
@@ -99,10 +144,63 @@ resource "aws_iam_role_policy_attachment" "default_node_group_AmazonEKS_CNI_Poli
   role       = aws_iam_role.default_node_group.name
 }
 
+resource "aws_iam_role_policy_attachment" "default_node_group_AmazonEKS_EBSCSI_Policy" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+  role       = aws_iam_role.default_node_group.name
+}
+
 resource "aws_iam_role_policy_attachment" "default_node_group_AmazonEC2ContainerRegistryReadOnly" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
   role       = aws_iam_role.default_node_group.name
 }
+
+resource "aws_iam_role_policy_attachment" "default_node_group_SSMCore" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  role       = aws_iam_role.default_node_group.name
+}
+
+
+data "aws_iam_policy_document" "default_node_group_ebs_csi_kms_policy" {
+  statement {
+    actions = [
+      "kms:CreateGrant",
+      "kms:ListGrants",
+      "kms:RevokeGrant"
+    ]
+
+    resources = [
+      var.kms_key_arn
+    ]
+
+    condition {
+      test     = "Bool"
+      variable = "kms:GrantIsForAWSResource"
+      values   = ["true"]
+    }
+
+  }
+
+  statement {
+    actions = [
+      "kms:Encrypt",
+      "kms:Decrypt",
+      "kms:ReEncrypt*",
+      "kms:GenerateDataKey*",
+      "kms:DescribeKey"
+    ]
+
+    resources = [
+      var.kms_key_arn
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "default_node_group_ebs_csi_kms" {
+  name   = "Nodegroup-EBSCSI-${var.name}"
+  role   = aws_iam_role.default_node_group.name
+  policy = data.aws_iam_policy_document.default_node_group_ebs_csi_kms_policy.json
+}
+
 
 resource "aws_eks_addon" "addon" {
   for_each      = var.addons
