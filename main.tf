@@ -17,12 +17,17 @@ resource "aws_eks_cluster" "default" {
 
   }
 
-  encryption_config {
-    provider {
-      key_arn =var.kms_key_arn
+  dynamic "encryption_config" {
+    for_each = var.enable_secrets_encryption ? [1] : []
+    content {
+      provider {
+        key_arn = var.kms_key_arn
+      }
+      resources = ["secrets"]
     }
-    resources = ["secrets"]
   }
+
+
 
   depends_on = [
     aws_cloudwatch_log_group.default,
@@ -30,25 +35,41 @@ resource "aws_eks_cluster" "default" {
   ]
 }
 
+data "cloudinit_config" "default" {
+  gzip          = false
+  base64_encode = true
+  # https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html
+  boundary = "==BOUNDARY=="
+
+  part {
+    content_type = "text/cloud-config"
+    content      = var.enable_launch_template ? var.user_data : ""
+  }
+}
+
+
 resource "aws_launch_template" "default" {
   name = "${var.name}-default-launch-template"
   monitoring {
     enabled = true
   }
 
+
   block_device_mappings {
     device_name = "/dev/xvda"
-
     ebs {
-      volume_size = var.disk_size
-      encrypted   = true
-      volume_type = "gp3"
-      kms_key_id  = var.kms_key_arn
+      volume_size           = var.disk_size
+      volume_type           = "gp2"
+      encrypted             = true
+      kms_key_id            = var.kms_key_arn
+      delete_on_termination = true
 
     }
   }
 
-  user_data = var.user_data
+  vpc_security_group_ids = [aws_eks_cluster.default.vpc_config[0].cluster_security_group_id]
+
+  user_data = data.cloudinit_config.default.rendered
 }
 
 resource "aws_eks_node_group" "default" {
@@ -66,7 +87,7 @@ resource "aws_eks_node_group" "default" {
     min_size     = var.scaling_config.min_size
   }
 
-  disk_size = var.disk_size
+  disk_size = var.enable_launch_template ? null : var.disk_size
 
 
   dynamic "launch_template" {
@@ -163,9 +184,9 @@ resource "aws_iam_role_policy_attachment" "default_node_group_SSMCore" {
 data "aws_iam_policy_document" "default_node_group_ebs_csi_kms_policy" {
   statement {
     actions = [
-      "kms:CreateGrant",
+      #      "kms:CreateGrant",
       "kms:ListGrants",
-      "kms:RevokeGrant"
+      #     "kms:RevokeGrant"
     ]
 
     resources = [
