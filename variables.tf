@@ -101,3 +101,9 @@ variable "enable_launch_template" {
   default     = false
   type        = bool
 }
+
+variable "enable_secrets_encryption" {
+  description = "Enable Secrets Encryption"
+  default     = false
+  type        = bool
+}
